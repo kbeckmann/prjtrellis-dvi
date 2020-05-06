@@ -17,10 +17,10 @@ module top_vgatest_640x480
     clk_25_250_125_25
     clock_instance
     (
-      .clki(clk_25mhz),
-      .clko(clk_250MHz),
-      .clks1(clk_125MHz),
-      .clks2(clk_25MHz),
+      .clkin(clk_25mhz),
+      .clkout0(clk_250MHz),
+      .clkout1(clk_125MHz),
+      .clkout2(clk_25MHz),
       .locked(clk_locked)
     );
     

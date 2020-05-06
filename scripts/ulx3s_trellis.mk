@@ -59,16 +59,16 @@ YOSYS_OPTIONS ?=
 # clock generator
 CLK0_NAME ?= clk0
 CLK0_FILE_NAME ?= clocks/$(CLK0_NAME).v
-CLK0_OPTIONS ?= --input 25 --output 100 --s1 50 --p1 0 --s2 25 --p2 0 --s3 125 --p3 0
+CLK0_OPTIONS ?= -i 25 -o 100 --s1 50 --p1 0 --s2 25 --p2 0 --s3 125 --p3 0
 CLK1_NAME ?= clk1
 CLK1_FILE_NAME ?= clocks/$(CLK1_NAME).v
-CLK1_OPTIONS ?= --input 25 --output 100 --s1 50 --p1 0 --s2 25 --p2 0 --s3 125 --p3 0
+CLK1_OPTIONS ?= -i 25 -o 100 --s1 50 --p1 0 --s2 25 --p2 0 --s3 125 --p3 0
 CLK2_NAME ?= clk2
 CLK2_FILE_NAME ?= clocks/$(CLK2_NAME).v
-CLK2_OPTIONS ?= --input 25 --output 100 --s1 50 --p1 0 --s2 25 --p2 0 --s3 125 --p3 0
+CLK2_OPTIONS ?= -i 25 -o 100 --s1 50 --p1 0 --s2 25 --p2 0 --s3 125 --p3 0
 CLK3_NAME ?= clk3
 CLK3_FILE_NAME ?= clocks/$(CLK3_NAME).v
-CLK3_OPTIONS ?= --input 25 --output 100 --s1 50 --p1 0 --s2 25 --p2 0 --s3 125 --p3 0
+CLK3_OPTIONS ?= -i 25 -o 100 --s1 50 --p1 0 --s2 25 --p2 0 --s3 125 --p3 0
 
 # closed source synthesis tools
 DIAMOND_BASE := /usr/local/diamond
