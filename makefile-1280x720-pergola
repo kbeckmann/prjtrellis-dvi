@@ -1,27 +1,31 @@
 # ******* project, board and chip name *******
 PROJECT = dvi
-BOARD = ulx3s
+BOARD = pergola
 # 12 25 45 85
-FPGA_SIZE = 85
+FPGA_SIZE = 12
 
 # ******* design files *******
-CONSTRAINTS = constraints/ulx3s_v20_segpdi.lpf
-TOP_MODULE = top_vgatest_640x480
+CONSTRAINTS = constraints/pergola.lpf
+TOP_MODULE = top_vgatest_1280x720_pergola
 TOP_MODULE_FILE = hdl/$(TOP_MODULE).v
 
-CLK0_NAME = clk_25_250_125_25
+CLK0_NAME = clk_16_100
 CLK0_FILE_NAME = clocks/$(CLK0_NAME).v
 CLK0_OPTIONS = \
+  -i 16 \
+  --clkout0 100
+
+CLK1_NAME = clk_25_shift_pixel
+CLK1_FILE_NAME = clocks/$(CLK1_NAME).v
+CLK1_OPTIONS = \
   -i 25 \
-  -o 250 \
-  --clkout1 125 \
-  --phase1 0 \
-  --clkout2 25 \
-  --phase2 0
+  --clkout0 375 \
+  --clkout1 75
 
 VERILOG_FILES = \
   $(TOP_MODULE_FILE) \
   $(CLK0_FILE_NAME) \
+  $(CLK1_FILE_NAME) \
   hdl/fake_differential.v
 
 # *.vhd those files will be converted to *.v files with vhdl2vl (warning overwriting/deleting)

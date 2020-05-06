@@ -1,23 +1,37 @@
-module top_vgatest_1920x1080
+module top_vgatest_1280x720_pergola
 (
-  input clk_25mhz,
-  input [6:0] btn,
+  input clk_16mhz,
+  input btn,
   output [7:0] led,
   output [3:0] gpdi_dp, gpdi_dn,
-  output wifi_gpio0
+  // output wifi_gpio0
 );
     parameter C_ddr = 1'b1; // 0:SDR 1:DDR
 
     // wifi_gpio0=1 keeps board from rebooting
     // hold btn0 to let ESP32 take control over the board
-    assign wifi_gpio0 = btn[0];
+    // assign wifi_gpio0 = btn[0];
 
     // clock generator
+    wire clk_100MHz, clk100_locked;
+    clk_16_100
+    clock25_instance
+    (
+      .clkin(clk_16mhz),
+      .clkout0(clk_100MHz),
+      .locked(clk100_locked)
+    );
+    reg [1:0] clk_25MHz_r;
+    wire clk_25MHz = clk_25MHz_r[1] & clk100_locked;
+    always @(posedge clk_100MHz) begin
+      clk_25MHz_r <= clk_25MHz_r + 1;
+    end
+
     wire clk_shift, clk_pixel, clk_locked;
     clk_25_shift_pixel
     clock_instance
     (
-      .clkin(clk_25mhz),
+      .clkin(clk_25MHz),
       .clkout0(clk_shift),
       .clkout1(clk_pixel),
       .locked(clk_locked)
@@ -40,41 +54,30 @@ module top_vgatest_1920x1080
 
     // VGA signal generator
     wire [7:0] vga_r, vga_g, vga_b;
-    wire pre_hsync, pre_vsync, pre_blank;
     wire vga_hsync, vga_vsync, vga_blank;
-    wire [11:0] x;
-    wire [10:0] y;
     vga
     #(
-      .C_resolution_x(1920),
-      .C_hsync_front_porch(88),
-      .C_hsync_pulse(44),
-      .C_hsync_back_porch(148),
-      .C_resolution_y(1080),
-      .C_vsync_front_porch(4),
+      .C_resolution_x(1280),
+      .C_hsync_front_porch(82),
+      .C_hsync_pulse(80),
+      .C_hsync_back_porch(216),
+      .C_resolution_y(720),
+      .C_vsync_front_porch(3),
       .C_vsync_pulse(5),
-      .C_vsync_back_porch(36)
+      .C_vsync_back_porch(22)
     )
     vga_instance
     (
       .clk_pixel(clk_pixel),
       .test_picture(1'b1), // enable test picture generation
-      //.vga_r(vga_r),
-      //.vga_g(vga_g),
-      //.vga_b(vga_b),
-      .beam_x(x),
-      .beam_y(y),
-      .vga_hsync(pre_hsync),
-      .vga_vsync(pre_vsync),
-      .vga_blank(pre_blank)
+      .vga_r(vga_r),
+      .vga_g(vga_g),
+      .vga_b(vga_b),
+      .vga_hsync(vga_hsync),
+      .vga_vsync(vga_vsync),
+      .vga_blank(vga_blank)
     );
-    textcon con_i (
-      .clk(clk_pixel),
-      .x(x), .y(y),
-      .r(vga_r), .g(vga_g), .b(vga_b),
-      .hs_in(pre_hsync), .vs_in(pre_vsync), .blk_in(pre_blank),
-      .hs_out(vga_hsync), .vs_out(vga_vsync), .blk_out(vga_blank)
-    );
+
     // VGA to digital video converter
     wire [1:0] tmds[3:0];
     vga2dvid
