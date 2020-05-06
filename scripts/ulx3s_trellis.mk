@@ -119,22 +119,23 @@ $(PROJECT).json: $(VERILOG_FILES) $(VHDL_TO_VERILOG_FILES)
 	$(VERILOG_FILES) $(VHDL_TO_VERILOG_FILES)
 
 $(BOARD)_$(FPGA_SIZE)f_$(PROJECT).config: $(PROJECT).json $(BASECFG)
-	$(NEXTPNR-ECP5) --$(FPGA_K)k --json $(PROJECT).json --lpf $(CONSTRAINTS) --basecfg $(BASECFG) --textcfg $@ 
+	# $(NEXTPNR-ECP5) --$(FPGA_K)k --json $(PROJECT).json --lpf $(CONSTRAINTS) --basecfg $(BASECFG) --textcfg $@ 
+	$(NEXTPNR-ECP5) --$(FPGA_K)k --json $(PROJECT).json --lpf $(CONSTRAINTS) --package CABGA256  --textcfg $@ 
 
 $(BOARD)_$(FPGA_SIZE)f_$(PROJECT).bit: $(BOARD)_$(FPGA_SIZE)f_$(PROJECT).config
 	LANG=C LD_LIBRARY_PATH=$(LIBTRELLIS) $(ECPPACK) $(IDCODE_CHIPID) --db $(TRELLISDB) --input $< --bit $@
 
 $(CLK0_FILE_NAME):
 	LANG=C LD_LIBRARY_PATH=$(LIBTRELLIS) $(ECPPLL) $(CLK0_OPTIONS) --file $@
-	sed -e "s/module pll(/module $(CLK0_NAME)(/g" -i $@
+	sed -e "s/module pll/module $(CLK0_NAME)/g" -i $@
 
 $(CLK1_FILE_NAME):
 	LANG=C LD_LIBRARY_PATH=$(LIBTRELLIS) $(ECPPLL) $(CLK1_OPTIONS) --file $@
-	sed -e "s/module pll(/module $(CLK1_NAME)(/g" -i $@
+	sed -e "s/module pll/module $(CLK1_NAME)/g" -i $@
 
 $(CLK2_FILE_NAME):
 	LANG=C LD_LIBRARY_PATH=$(LIBTRELLIS) $(ECPPLL) $(CLK2_OPTIONS) --file $@
-	sed -e "s/module pll(/module $(CLK2_NAME)(/g" -i $@
+	sed -e "s/module pll/module $(CLK2_NAME)/g" -i $@
 
 $(CLK3_FILE_NAME):
 	LANG=C LD_LIBRARY_PATH=$(LIBTRELLIS) $(ECPPLL) $(CLK3_OPTIONS) --file $@
