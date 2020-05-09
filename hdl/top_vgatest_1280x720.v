@@ -17,9 +17,9 @@ module top_vgatest_1280x720
     clk_25_shift_pixel
     clock_instance
     (
-      .clki(clk_25mhz),
-      .clko(clk_shift),
-      .clks1(clk_pixel),
+      .clkin(clk_25mhz),
+      .clkout0(clk_shift),
+      .clkout1(clk_pixel),
       .locked(clk_locked)
     );
     

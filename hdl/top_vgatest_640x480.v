@@ -47,7 +47,9 @@ module top_vgatest_640x480
       .led(countblink)
     );
     assign led[0] = btn[1];
-    assign led[7:1] = countblink[7:1];
+    assign led[1] = countblink[4];
+    assign led[7:2] = 0;
+    // assign led[7:1] = countblink[7:1];
 
     // VGA signal generator
     wire [7:0] vga_r, vga_g, vga_b;
