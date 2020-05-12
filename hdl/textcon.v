@@ -7,6 +7,7 @@ module textcon(
 	output hs_out, vs_out, blk_out
 );
 
+reg [32:0] foo = 0;
 wire [11:0] rom_addr = {x[10:3], y[3:0]};
 
 reg [7:0] font_rom[0:4095];
@@ -22,17 +23,22 @@ reg [2:0] ctrl_del1, ctrl_del2;
 wire pixel = rom_data[3'd7 - x_next[2:0]];
 
 always @(posedge clk) begin
+	foo <= foo + 1;
 	rom_data <= font_rom[rom_addr];
-	case (y[6:4])
-		3'b000: begin font_r = 8'hFF; font_g = 8'hFF; font_b = 8'hFF; end
-		3'b001: begin font_r = 8'hFF; font_g = 8'h00; font_b = 8'h00; end
-		3'b010: begin font_r = 8'h00; font_g = 8'hFF; font_b = 8'h00; end
-		3'b011: begin font_r = 8'h00; font_g = 8'h00; font_b = 8'hFF; end
-		3'b100: begin font_r = 8'hFF; font_g = 8'hFF; font_b = 8'h00; end
-		3'b101: begin font_r = 8'h00; font_g = 8'hFF; font_b = 8'hFF; end
-		3'b110: begin font_r = 8'hFF; font_g = 8'h00; font_b = 8'hFF; end
-		3'b111: begin font_r = 8'h7F; font_g = 8'h7F; font_b = 8'h7F; end
-	endcase
+	// case (y[6:4])
+	// 	3'b000: begin font_r = 8'hFF; font_g = 8'hFF; font_b = 8'hFF; end
+	// 	3'b001: begin font_r = 8'hFF; font_g = 8'h00; font_b = 8'h00; end
+	// 	3'b010: begin font_r = 8'h00; font_g = 8'hFF; font_b = 8'h00; end
+	// 	3'b011: begin font_r = 8'h00; font_g = 8'h00; font_b = 8'hFF; end
+	// 	3'b100: begin font_r = 8'hFF; font_g = 8'hFF; font_b = 8'h00; end
+	// 	3'b101: begin font_r = 8'h00; font_g = 8'hFF; font_b = 8'hFF; end
+	// 	3'b110: begin font_r = 8'hFF; font_g = 8'h00; font_b = 8'hFF; end
+	// 	3'b111: begin font_r = 8'h7F; font_g = 8'h7F; font_b = 8'h7F; end
+	// endcase
+
+	font_r = y + foo[28:20];
+	font_g = x + foo[27:18];
+	font_b = (((x>>1) + y - foo[27:18])>>3);
 
 	x_next <= x;
 	r <= pixel ? font_r : 8'h00;
