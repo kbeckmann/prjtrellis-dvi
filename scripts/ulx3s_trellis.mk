@@ -3,6 +3,9 @@ PROJECT ?= project
 BOARD ?= board
 FPGA_SIZE ?= 12
 FPGA_CHIP ?= lfe5u-$(FPGA_SIZE)f
+SPEED ?= 6
+PACKAGE ?= CABGA381
+ACM_DEVICE?=/dev/ttyACM0
 
 # ******* design files *******
 CONSTRAINTS ?= board_constraints.lpf
@@ -119,11 +122,10 @@ $(PROJECT).json: $(VERILOG_FILES) $(VHDL_TO_VERILOG_FILES)
 	$(VERILOG_FILES) $(VHDL_TO_VERILOG_FILES)
 
 $(BOARD)_$(FPGA_SIZE)f_$(PROJECT).config: $(PROJECT).json $(BASECFG)
-	# $(NEXTPNR-ECP5) --$(FPGA_K)k --json $(PROJECT).json --lpf $(CONSTRAINTS) --basecfg $(BASECFG) --textcfg $@ 
-	$(NEXTPNR-ECP5) --$(FPGA_K)k --json $(PROJECT).json --lpf $(CONSTRAINTS) --package CABGA256 --speed 8 --textcfg $@ 
+	$(NEXTPNR-ECP5) --$(FPGA_K)k --json $(PROJECT).json --lpf $(CONSTRAINTS) --package $(PACKAGE) --speed $(SPEED) --textcfg $@ 
 
 $(BOARD)_$(FPGA_SIZE)f_$(PROJECT).bit: $(BOARD)_$(FPGA_SIZE)f_$(PROJECT).config
-	LANG=C LD_LIBRARY_PATH=$(LIBTRELLIS) $(ECPPACK) $(IDCODE_CHIPID) --db $(TRELLISDB) --input $< --bit $@
+	LANG=C LD_LIBRARY_PATH=$(LIBTRELLIS) $(ECPPACK) $(IDCODE_CHIPID) --db $(TRELLISDB) --compress --input $< --bit $@
 
 $(CLK0_FILE_NAME):
 	LANG=C LD_LIBRARY_PATH=$(LIBTRELLIS) $(ECPPLL) $(CLK0_OPTIONS) --file $@
@@ -171,6 +173,14 @@ program: $(BOARD)_$(FPGA_SIZE)f_$(PROJECT).bit
 # program SRAM  with FleaFPGA-JTAG (temporary)
 program_flea: $(BOARD)_$(FPGA_SIZE)f_$(PROJECT).vme
 	$(FLEAFPGA_JTAG) $<
+
+program_pergola: $(BOARD)_$(FPGA_SIZE)f_$(PROJECT).bit
+	stty -F $(ACM_DEVICE) 300 raw -clocal -echo icrnl
+	sleep 0.1
+	cat $(ACM_DEVICE) > /dev/null &
+	echo "$(shell stat -c%s $^)" > $(ACM_DEVICE)
+	cat $^ > $(ACM_DEVICE)
+	sync
 
 # program FLASH over US1 port with ujprog bootloader (permanently)
 flash: $(BOARD)_$(FPGA_SIZE)f_$(PROJECT).bit

@@ -3,6 +3,8 @@ PROJECT = dvi
 BOARD = pergola
 # 12 25 45 85
 FPGA_SIZE = 12
+PACKAGE = CABGA256
+SPEED = 8
 
 # ******* design files *******
 CONSTRAINTS = constraints/pergola.lpf
