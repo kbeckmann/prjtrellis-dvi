@@ -183,6 +183,7 @@ reg [16:0] CounterF;
   wire [7:0] real_g;
   wire [7:0] real_b;
   wire [7:0] border_w = CounterFs[3:0];
+  wire signed [16:0] d = -(CounterF<<12) + ((CounterX - 640) * (CounterX - 640)) + ((CounterY - 384) * (CounterY - 384));
   always @(*) begin
     if (
         (
@@ -196,9 +197,16 @@ reg [16:0] CounterF;
       real_g = 0;
       real_b = 255;
     end else begin
-      real_r = CounterY[8] * (((X) & (Y)) ? 0 : 255);
-      real_g = (CounterFs+(X ^ Y));
-      real_b = CounterY[8] * (X&Y);
+      real_r = CounterY[8] * (((X) & (Y)) ? d[16]*255 :  255);
+      real_g = (CounterFs+(X ^ Y))*(1-d[16]);
+      real_b = CounterY[8] * (X&Y)*(1-d[16]);
+
+
+      // real_r = ((d > (CounterFs<<8)) & (d < (CounterFs<<9))) ? 255 : 0;
+      // real_r = d[12] * 255;
+      // real_g = 0;
+      // real_b = 0;
+
     end
   end
 
