@@ -100,6 +100,8 @@ wire [7:0] shift_red; wire [7:0] shift_green; wire [7:0] shift_blue;  // RENAME 
 wire [7:0] W; wire [7:0] A; wire [7:0] T; reg [7:0] test_red; reg [7:0] test_green; reg [7:0] test_blue;
 wire [5:0] Z;
 
+reg [16:0] CounterF;
+
   // wire fetcharea; // when to fetch data, must be 1 byte earlier than draw area
   assign fetcharea = CounterX < C_resolution_x && CounterY < C_resolution_y ? 1'b1 : 1'b0;
   // output request to fetch new data every pixel
@@ -127,8 +129,19 @@ wire [5:0] Z;
   assign beam_x = CounterX;
   assign beam_y = CounterY;
   assign vga_blank =  ~fetcharea;
+
+  wire foo = CounterY < C_resolution_y ? 1'b1 : 1'b0;
+  reg foo_r;
+
+
   // Sync and VBlank generation
   always @(posedge clk_pixel) begin
+
+    foo_r <= foo;
+    if (foo_r && ~foo) begin
+      CounterF <= CounterF + 1;
+    end
+
     if(CounterX == (C_resolution_x + C_hsync_front_porch)) begin
       hSync <= 1'b1;
       if(CounterY == (C_resolution_y + C_vsync_front_porch - 1)) begin
@@ -153,15 +166,27 @@ wire [5:0] Z;
   assign vga_vsync = vSync;
   assign vga_vblank = vBlank;
   assign line_repeat = C_dbl_y == 0 ? 1'b0 : hSync &  ~CounterY[0];
+
+  wire [7:0]CounterFs = CounterF[7] ? (127 - CounterF[6:0]) : CounterF[6:0];
+  wire [7:0]CounterYs = CounterY[7] ? (127 - CounterY[6:0]) : CounterY[6:0];
   // test picture generator
-  assign A = CounterX[7:5] == 3'b010 && CounterY[7:5] == 3'b010 ? {8{1'b1}} : {8{1'b0}};
-  assign W = CounterX[7:0] == CounterY[7:0] ? {8{1'b1}} : {8{1'b0}};
-  assign Z = CounterY[4:3] == ( ~CounterX[4:3]) ? {6{1'b1}} : {6{1'b0}};
-  assign T = {8{CounterY[6]}};
+  // assign A = CounterX[7:5] == 3'b010 && CounterY[7:5] == 3'b010 ? {8{1'b1}} : {8{1'b0}};
+  // assign W = CounterX[7:0] == CounterY[7:0] ? {8{1'b1}} : {8{1'b0}};
+  // assign Z = CounterY[4:3] == ( ~CounterX[4:3]) ? {6{1'b1}} : {6{1'b0}};
+  // assign T = {8{CounterY[6]}};
+  wire signed [7:0] dir = (CounterY[8] == 1) ? 1 : -1;
+  wire [7:0] X = (CounterX + CounterYs + dir * (CounterF<<3));
+  wire [7:0] Y = (CounterY);
   always @(posedge clk_pixel) begin
-    test_red <= (({CounterX[5:0] & Z,2'b00}) | W) &  ~A;
-    test_green <= ((CounterX[7:0] & T) | W) &  ~A;
-    test_blue <= CounterY[7:0] | W | A;
+    // test_red <= (({CounterX[5:0] & Z,2'b00}) | W) &  ~A;
+    // test_green <= ((CounterX[7:0] & T) | W) &  ~A;
+    // test_blue <= (CounterY[7:0]) | W | A;
+
+    test_red <= (X) & (Y);
+    test_green <= CounterFs;
+    test_blue <= CounterY[8] * 127;
+    // test_green <= CounterF[16:0] << 3;
+    // test_blue <= CounterF[16:0] << 4;
   end
 
   // output multiplexer: bitmap graphics or test picture
