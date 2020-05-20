@@ -3,7 +3,8 @@ module top_vgatest_1280x720_pergola
   input clk_16mhz,
   input btn,
   output [7:0] led,
-  output [3:0] gpdi_dp, gpdi_dn,
+  // output [3:0] gpdi_dp, gpdi_dn,
+  output [3:0] gpdi_dp,
   // output wifi_gpio0
 );
     parameter C_ddr = 1'b1; // 0:SDR 1:DDR
@@ -113,7 +114,7 @@ module top_vgatest_1280x720_pergola
       .in_green(tmds[1]),
       .in_blue(tmds[0]),
       .out_p(gpdi_dp),
-      .out_n(gpdi_dn)
+      // .out_n(gpdi_dn)
     );
 
 endmodule

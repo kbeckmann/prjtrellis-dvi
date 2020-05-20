@@ -90,7 +90,7 @@ parameter C_frame_y = C_resolution_y + C_vsync_front_porch + C_vsync_pulse + C_v
 // refresh_rate = pixel_clock/(frame_x*frame_y) = 25MHz / (800*525) = 59.52Hz
 parameter C_synclen = 3;  // >=2, bit length of the clock synchronizer shift register
 parameter C_bits_x = 12;  // ceil_log2(C_frame_x-1)
-parameter C_bits_y = 11;  // ceil_log2(C_frame_y-1)
+parameter C_bits_y = 12;  // ceil_log2(C_frame_y-1)
 reg [C_bits_x - 1:0] CounterX;  // (9 downto 0) is good for up to 1023 frame timing width (resolution 640x480)
 reg [C_bits_y - 1:0] CounterY;  // (9 downto 0) is good for up to 1023 frame timing width (resolution 640x480)
 reg hSync; reg vSync; reg vBlank; reg DrawArea; wire fetcharea;
@@ -174,19 +174,38 @@ reg [16:0] CounterF;
   // assign W = CounterX[7:0] == CounterY[7:0] ? {8{1'b1}} : {8{1'b0}};
   // assign Z = CounterY[4:3] == ( ~CounterX[4:3]) ? {6{1'b1}} : {6{1'b0}};
   // assign T = {8{CounterY[6]}};
-  wire signed [7:0] dir = (CounterY[8] == 1) ? 1 : -1;
-  wire [7:0] X = (CounterX + CounterYs + dir * (CounterF<<3));
+  wire signed [C_bits_x-1:0] dir = (CounterY[8] == 1) ? 2 : 1;
+  wire signed [C_bits_x-1:0] dir2 = (CounterY[8] == 1) ? 1 : -1;
+  wire [7:0] X = ((CounterX * dir2) + CounterYs + (dir * CounterF<<2));
   wire [7:0] Y = (CounterY);
-  always @(posedge clk_pixel) begin
-    // test_red <= (({CounterX[5:0] & Z,2'b00}) | W) &  ~A;
-    // test_green <= ((CounterX[7:0] & T) | W) &  ~A;
-    // test_blue <= (CounterY[7:0]) | W | A;
 
-    test_red <= (X) & (Y);
-    test_green <= CounterFs;
-    test_blue <= CounterY[8] * 127;
-    // test_green <= CounterF[16:0] << 3;
-    // test_blue <= CounterF[16:0] << 4;
+  wire [7:0] real_r;
+  wire [7:0] real_g;
+  wire [7:0] real_b;
+  wire [7:0] border_w = CounterFs[3:0];
+  always @(*) begin
+    if (
+        (
+          (CounterY > (256 - border_w)) & (CounterY < (256 + border_w))
+        ) |
+        (
+          (CounterY > (512 - border_w)) & (CounterY < (512 + border_w))
+        )
+      ) begin
+      real_r = 0;
+      real_g = 0;
+      real_b = 255;
+    end else begin
+      real_r = CounterY[8] * (((X) & (Y)) ? 0 : 255);
+      real_g = (CounterFs+(X ^ Y));
+      real_b = CounterY[8] * (X&Y);
+    end
+  end
+
+  always @(posedge clk_pixel) begin
+    test_red   <= real_r;
+    test_green <= real_g;
+    test_blue  <= real_b;
   end
 
   // output multiplexer: bitmap graphics or test picture
