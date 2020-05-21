@@ -167,8 +167,9 @@ reg [16:0] CounterF;
   assign vga_vblank = vBlank;
   assign line_repeat = C_dbl_y == 0 ? 1'b0 : hSync &  ~CounterY[0];
 
-  wire [7:0]CounterFs = CounterF[7] ? (127 - CounterF[6:0]) : CounterF[6:0];
-  wire [7:0]CounterYs = CounterY[7] ? (127 - CounterY[6:0]) : CounterY[6:0];
+  wire [7:0]CounterFs  = CounterF[7] ? (127 - CounterF[6:0]) : CounterF[6:0];
+  wire [7:0]CounterFs2 = CounterF[8] ? (127 - CounterF[7:1]) : CounterF[7:1];
+  wire [7:0]CounterYs  = CounterY[7] ? (127 - CounterY[6:0]) : CounterY[6:0];
   // test picture generator
   // assign A = CounterX[7:5] == 3'b010 && CounterY[7:5] == 3'b010 ? {8{1'b1}} : {8{1'b0}};
   // assign W = CounterX[7:0] == CounterY[7:0] ? {8{1'b1}} : {8{1'b0}};
@@ -176,14 +177,19 @@ reg [16:0] CounterF;
   // assign T = {8{CounterY[6]}};
   wire signed [C_bits_x-1:0] dir = (CounterY[8] == 1) ? 2 : 1;
   wire signed [C_bits_x-1:0] dir2 = (CounterY[8] == 1) ? 1 : -1;
+  wire signed [C_bits_x-1:0] dir3 = (CounterY[8] == 1) ? 2 : 2;
   wire [7:0] X = ((CounterX * dir2) + CounterYs + (dir * CounterF<<2));
-  wire [7:0] Y = (CounterY);
+  wire [7:0] Y = (CounterY * dir3) >> 1;
 
   wire [7:0] real_r;
   wire [7:0] real_g;
   wire [7:0] real_b;
   wire [7:0] border_w = CounterFs[3:0];
-  wire signed [16:0] d = -(CounterF<<12) + ((CounterX - 640) * (CounterX - 640)) + ((CounterY - 384) * (CounterY - 384));
+  wire [C_bits_x-1:0] center_x = 640 + 127 - CounterFs;
+  wire [C_bits_y-1:0] center_y = 384 + 127 - CounterFs2;
+  wire [32:0] dd = ((CounterX - center_x) * (CounterX - center_x)) + ((CounterY - center_y) * (CounterY - center_y));
+  // wire signed [24:0] dd = ((CounterX - 640) * (CounterX - 640)) + ((CounterY - 384) * (CounterY - 384));
+  wire [16:0] d = dd > 50000 ? dd - (CounterF << 10) : 0;
   always @(*) begin
     if (
         (
@@ -193,17 +199,22 @@ reg [16:0] CounterF;
           (CounterY > (512 - border_w)) & (CounterY < (512 + border_w))
         )
       ) begin
-      real_r = 0;
-      real_g = 0;
-      real_b = 255;
+      real_r = CounterFs << 1;
+      real_g = CounterFs[7:0] << 2;
+      real_b = (127 + CounterFs2) * (CounterX[3] ^ CounterY[3]);
     end else begin
-      real_r = CounterY[8] * (((X) & (Y)) ? d[16]*255 :  255);
-      real_g = (CounterFs+(X ^ Y))*(1-d[16]);
-      real_b = CounterY[8] * (X&Y)*(1-d[16]);
+
+      // real_r = CounterY[8] * (((X) & (Y)) ? d[16]*255 :  255);
+      // real_g = (2 * (CounterFs+(X ^ Y))*(2-d[16])) >> 1;
+      // real_b = CounterY[8] * (X&Y)*(1-d[16]);
+
+      real_r = CounterY[8] * (((X) & (Y)) ? ~d[17]*255 :  255);
+      real_g = (CounterFs+(X ^ Y))*(2-d[16]) >> 1;
+      real_b = ~(CounterFs2+(X & Y))*(1-d[15]) >> 1;
 
 
       // real_r = ((d > (CounterFs<<8)) & (d < (CounterFs<<9))) ? 255 : 0;
-      // real_r = d[12] * 255;
+      // real_r = d[15] * 255;
       // real_g = 0;
       // real_b = 0;
 
